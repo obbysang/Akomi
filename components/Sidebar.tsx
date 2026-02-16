@@ -1,34 +1,42 @@
-
 import React from 'react';
 import { 
   Plus, 
-  Search, 
-  Layout, 
-  BookOpen, 
-  Link2, 
-  Home, 
-  ChevronDown, 
-  Folder, 
-  Settings, 
-  HelpCircle,
+  Layout,
+  Home,
+  Shield,
+  Activity,
+  FileText,
+  BarChart3,
+  CheckCircle,
+  Clock,
+  LogOut,
   User
 } from 'lucide-react';
+import { useAuth } from '../services/AuthContext';
 
 interface SidebarProps {
   onNewAgent: () => void;
-  activeView: 'list' | 'create' | 'status';
-  onNavigate: (view: 'list' | 'create' | 'status') => void;
+  activeView: 'landing' | 'create' | 'status' | 'policy' | 'encryption' | 'dashboard' | 'condition' | 'result' | 'audit';
+  onNavigate: (view: 'landing' | 'create' | 'status' | 'policy' | 'encryption' | 'dashboard' | 'condition' | 'result' | 'audit') => void;
 }
 
 const Sidebar: React.FC<SidebarProps> = ({ onNewAgent, activeView, onNavigate }) => {
+  const { user, logout } = useAuth();
+
+  const handleLogout = async () => {
+    await logout();
+  };
+
   return (
-    <div className="w-[300px] bg-white border-r border-gray-200 h-screen flex flex-col">
+    <div className="w-[280px] bg-white border-r border-gray-200 h-screen flex flex-col">
       {/* Top Header */}
       <div className="p-4 flex items-center justify-between">
         <div className="flex items-center space-gap-2">
-          <div className="w-8 h-8 bg-[#004d4a] rounded-lg flex items-center justify-center">
-            <span className="text-white font-bold text-xs">AK</span>
-          </div>
+          <img 
+            src="/assets/Akomi.png" 
+            alt="Akomi Logo" 
+            className="w-8 h-8 object-contain"
+          />
           <span className="ml-3 font-semibold text-lg text-[#004d4a]">Akomi</span>
         </div>
       </div>
@@ -42,71 +50,121 @@ const Sidebar: React.FC<SidebarProps> = ({ onNewAgent, activeView, onNavigate })
           <Plus size={18} />
           <span>New Agent</span>
         </button>
-        <button className="w-full bg-white border border-gray-200 text-gray-700 py-2.5 rounded-lg flex items-center justify-center gap-2 transition-colors font-medium text-sm hover:bg-gray-50">
-          <BookOpen size={18} className="text-gray-500" />
-          <span>Templates</span>
-        </button>
       </div>
 
-      {/* Navigation Groups */}
+      {/* Navigation */}
       <div className="flex-1 overflow-y-auto mt-4">
         <div className="px-4 mb-6">
-          <div className="flex items-center justify-between text-[11px] font-bold text-gray-400 uppercase tracking-wider mb-3">
-            <span>Recents</span>
-            <ChevronDown size={14} />
+          <div className="text-[11px] font-bold text-gray-400 uppercase tracking-wider mb-3">
+            <span>Navigation</span>
           </div>
           <div className="space-y-1">
-             <button 
-               onClick={() => onNavigate('list')}
-               className={`w-full text-left px-3 py-2 rounded-md text-sm flex items-center gap-3 ${activeView === 'list' ? 'bg-gray-100 text-[#004d4a]' : 'text-gray-600 hover:bg-gray-50'}`}
-             >
-               <Layout size={16} />
-               <span>Agent History</span>
-             </button>
+            <button 
+              onClick={() => onNavigate('landing')}
+              className={`w-full text-left px-3 py-2 rounded-md text-sm flex items-center gap-3 ${
+                activeView === 'landing' ? 'bg-gray-100 text-[#004d4a]' : 'text-gray-600 hover:bg-gray-50'
+              }`}
+            >
+              <Home size={16} />
+              <span>Home</span>
+            </button>
+            <button 
+              onClick={() => onNavigate('dashboard')}
+              className={`w-full text-left px-3 py-2 rounded-md text-sm flex items-center gap-3 ${
+                activeView === 'dashboard' ? 'bg-gray-100 text-[#004d4a]' : 'text-gray-600 hover:bg-gray-50'
+              }`}
+            >
+              <BarChart3 size={16} />
+              <span>Agent Dashboard</span>
+            </button>
+            <button 
+              onClick={() => onNavigate('create')}
+              className={`w-full text-left px-3 py-2 rounded-md text-sm flex items-center gap-3 ${
+                activeView === 'create' ? 'bg-gray-100 text-[#004d4a]' : 'text-gray-600 hover:bg-gray-50'
+              }`}
+            >
+              <Layout size={16} />
+              <span>Create Policy</span>
+            </button>
+            <button 
+              onClick={() => onNavigate('audit')}
+              className={`w-full text-left px-3 py-2 rounded-md text-sm flex items-center gap-3 ${
+                activeView === 'audit' ? 'bg-gray-100 text-[#004d4a]' : 'text-gray-600 hover:bg-gray-50'
+              }`}
+            >
+              <FileText size={16} />
+              <span>Audit Trail</span>
+            </button>
           </div>
         </div>
 
         <div className="px-4 mb-6">
-          <div className="flex items-center justify-between text-[11px] font-bold text-gray-400 uppercase tracking-wider mb-3">
-            <span>Projects</span>
-            <Plus size={14} />
+          <div className="text-[11px] font-bold text-gray-400 uppercase tracking-wider mb-3">
+            <span>Quick Actions</span>
           </div>
           <div className="space-y-1">
-            <div className="group">
-              <div className="flex items-center justify-between px-3 py-2 rounded-md text-sm text-gray-600 hover:bg-gray-50 cursor-pointer">
-                <div className="flex items-center gap-3">
-                  <Folder size={16} className="text-[#8c52ff]" />
-                  <span>Subscription Renewal</span>
-                </div>
-                <ChevronDown size={14} />
-              </div>
-              <div className="pl-9 mt-1 space-y-1">
-                <div className="text-sm py-1.5 text-[#004d4a] font-medium border-l-2 border-[#004d4a] pl-4">Analytics Pro</div>
-                <div className="text-sm py-1.5 text-gray-500 hover:text-gray-800 pl-4 cursor-pointer">Storage SLA</div>
-                <div className="text-sm py-1.5 text-gray-500 hover:text-gray-800 pl-4 cursor-pointer">Compute Agent</div>
-              </div>
-            </div>
+            <button 
+              onClick={() => onNavigate('policy')}
+              className={`w-full text-left px-3 py-2 rounded-md text-sm flex items-center gap-3 ${
+                activeView === 'policy' ? 'bg-gray-100 text-[#004d4a]' : 'text-gray-600 hover:bg-gray-50'
+              }`}
+            >
+              <Shield size={16} />
+              <span>Renewal Policy</span>
+            </button>
+            <button 
+              onClick={() => onNavigate('condition')}
+              className={`w-full text-left px-3 py-2 rounded-md text-sm flex items-center gap-3 ${
+                activeView === 'condition' ? 'bg-gray-100 text-[#004d4a]' : 'text-gray-600 hover:bg-gray-50'
+              }`}
+            >
+              <Activity size={16} />
+              <span>Condition Check</span>
+            </button>
+            <button 
+              onClick={() => onNavigate('result')}
+              className={`w-full text-left px-3 py-2 rounded-md text-sm flex items-center gap-3 ${
+                activeView === 'result' ? 'bg-gray-100 text-[#004d4a]' : 'text-gray-600 hover:bg-gray-50'
+              }`}
+            >
+              <CheckCircle size={16} />
+              <span>Execution Result</span>
+            </button>
           </div>
         </div>
       </div>
 
-      {/* Footer / Upgrade */}
-      <div className="p-4 mt-auto">
-        <div className="bg-[#f0f9f9] p-4 rounded-xl mb-4 text-center">
-          <p className="text-xs text-[#004d4a] font-semibold mb-2">Unlock More Power with a Growth Plan</p>
-          <button className="w-full bg-white text-[#004d4a] border border-[#004d4a] py-1.5 rounded-full text-xs font-bold hover:bg-teal-50">
-            Upgrade to Growth
-          </button>
-        </div>
+      {/* Footer */}
+      <div className="p-4 mt-auto border-t border-gray-100">
+        {/* User Info */}
+        {user && (
+          <div className="flex items-center gap-3 mb-3 pb-3 border-b border-gray-100">
+            <div className="w-8 h-8 bg-[#004d4a] rounded-full flex items-center justify-center">
+              <User size={16} className="text-white" />
+            </div>
+            <div className="flex-1 min-w-0">
+              <p className="text-sm font-medium text-gray-900 truncate">
+                {user.name || user.email}
+              </p>
+              <p className="text-xs text-gray-500 truncate">
+                {user.email}
+              </p>
+            </div>
+          </div>
+        )}
         
-        <div className="flex items-center gap-3 pt-2 border-t border-gray-100">
-           <div className="w-8 h-8 rounded-full bg-gray-200 flex items-center justify-center overflow-hidden">
-             <img src="https://picsum.photos/id/64/32/32" alt="User" />
-           </div>
-           <div className="flex-1">
-             <p className="text-xs font-bold text-gray-800">Dev User</p>
-           </div>
-           <Settings size={16} className="text-gray-400 cursor-pointer hover:text-gray-600" />
+        {/* Logout Button */}
+        <button
+          onClick={handleLogout}
+          className="w-full flex items-center justify-center gap-2 px-3 py-2 text-sm text-gray-600 hover:text-red-600 hover:bg-red-50 rounded-md transition-colors"
+        >
+          <LogOut size={16} />
+          <span>Sign Out</span>
+        </button>
+        
+        <div className="mt-3 text-xs text-gray-400 text-center">
+          <p>BITE v2 Encrypted</p>
+          <p>Private Conditional Execution</p>
         </div>
       </div>
     </div>

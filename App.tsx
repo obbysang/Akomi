@@ -1,16 +1,79 @@
-
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import Sidebar from './components/Sidebar';
 import CreatePolicy from './components/CreatePolicy';
 import ExecutionSim from './components/ExecutionSim';
-import { RenewalIntent, ExecutionReceipt, AgentStatus } from './types';
-import { Clock, Share2, MoreHorizontal, Settings, Layout, Info } from 'lucide-react';
+import LandingPage from './components/LandingPage';
+import RenewalPolicyPage from './components/RenewalPolicyPage';
+import EncryptionConfirmationPage from './components/EncryptionConfirmationPage';
+import AgentStatusDashboard from './components/AgentStatusDashboard';
+import ConditionCheckPage from './components/ConditionCheckPage';
+import ExecutionResultPage from './components/ExecutionResultPage';
+import ReceiptAuditTrailPage from './components/ReceiptAuditTrailPage';
+import LoginPage from './components/LoginPage';
+import { AuthProvider, useAuth } from './services/AuthContext';
+import { policyApi, intentApi, executionApi, receiptApi, checkApiHealth } from './services/api';
+import { RenewalIntent, ExecutionReceipt, AgentStatus, SLAMetrics, PolicyData } from './types';
 
-const App: React.FC = () => {
-  const [activeView, setActiveView] = useState<'list' | 'create' | 'status'>('create');
+interface ReceiptWithIntent extends ExecutionReceipt {
+  intentId?: string;
+}
+
+const AppContent: React.FC = () => {
+  // Skip auth for now - users can access app directly
+  const isAuthenticated = true;
+  const [apiConnected, setApiConnected] = useState(false);
+  const [activeView, setActiveView] = useState<
+    'landing' | 'create' | 'status' | 'policy' | 'encryption' | 'dashboard' | 'condition' | 'result' | 'audit'
+  >('landing');
   const [intents, setIntents] = useState<RenewalIntent[]>([]);
+  const [policies, setPolicies] = useState<PolicyData[]>([]);
   const [activeIntent, setActiveIntent] = useState<RenewalIntent | null>(null);
-  const [receipts, setReceipts] = useState<ExecutionReceipt[]>([]);
+  const [receipts, setReceipts] = useState<ReceiptWithIntent[]>([]);
+  const [currentReceipt, setCurrentReceipt] = useState<ExecutionReceipt | null>(null);
+  const [slaMetrics, setSlaMetrics] = useState<SLAMetrics | null>(null);
+  const [isLoadingData, setIsLoadingData] = useState(false);
+
+  // Check API health on mount
+  useEffect(() => {
+    const checkApi = async () => {
+      const connected = await checkApiHealth();
+      setApiConnected(connected);
+      console.log('API Health:', connected ? 'Connected' : 'Disconnected');
+    };
+    checkApi();
+  }, []);
+
+  // Load data from backend when app loads
+  useEffect(() => {
+    loadDataFromBackend();
+  }, []);
+
+  const loadDataFromBackend = async () => {
+    setIsLoadingData(true);
+    try {
+      // Load policies from backend
+      const policiesResult = await policyApi.getPolicies();
+      if (policiesResult.success && policiesResult.data) {
+        setPolicies(policiesResult.data);
+      }
+
+      // Load intents from backend
+      const intentsResult = await intentApi.getIntents();
+      if (intentsResult.success && intentsResult.data) {
+        setIntents(intentsResult.data);
+      }
+
+      // Load receipts from backend
+      const receiptsResult = await receiptApi.getReceipts();
+      if (receiptsResult.success && receiptsResult.data) {
+        setReceipts(receiptsResult.data);
+      }
+    } catch (error) {
+      console.error('Failed to load data from backend:', error);
+    } finally {
+      setIsLoadingData(false);
+    }
+  };
 
   const handleCreated = (intent: RenewalIntent) => {
     setIntents([...intents, intent]);
@@ -25,7 +88,84 @@ const App: React.FC = () => {
 
   const handleReceipt = (receipt: ExecutionReceipt) => {
     setReceipts([receipt, ...receipts]);
+    setCurrentReceipt(receipt);
   };
+
+  const handleConditionResult = (result: 'PASS' | 'FAIL', metrics?: SLAMetrics) => {
+    if (metrics) {
+      setSlaMetrics(metrics);
+    }
+  };
+
+  const handleGetStarted = () => {
+    setActiveView('landing');
+  };
+
+  const handleCreatePolicy = () => {
+    setActiveView('policy');
+  };
+
+  const handleSavePolicy = (intent: RenewalIntent) => {
+    setIntents([...intents, intent]);
+    setActiveIntent(intent);
+    setActiveView('encryption');
+  };
+
+  const handleConfirmEncryption = () => {
+    if (activeIntent) {
+      setActiveView('dashboard');
+    }
+  };
+
+  const handleViewIntent = (intent: RenewalIntent) => {
+    setActiveIntent(intent);
+    setActiveView('condition');
+  };
+
+  const handleExecute = () => {
+    if (activeIntent && slaMetrics) {
+      // Simulate execution
+      const receipt: ExecutionReceipt = {
+        agent: activeIntent.vendor,
+        subscription: activeIntent.subscription,
+        condition: `${activeIntent.condition.type} ${activeIntent.condition.threshold}%`,
+        conditionResult: 'PASS',
+        executed: true,
+        amount: activeIntent.maxPrice,
+        txHash: `0x${Math.random().toString(36).substring(2, 15)}`,
+        timestamp: new Date().toISOString(),
+        reason: 'All conditions met and guardrails passed',
+        guardrailCheck: {
+          priceValid: true,
+          vendorAllowed: true,
+          withinLimit: true
+        }
+      };
+      handleReceipt(receipt);
+      setActiveView('result');
+    }
+  };
+
+  const handleViewReceipt = (receipt: ExecutionReceipt) => {
+    setCurrentReceipt(receipt);
+    setActiveView('result');
+  };
+
+  const handleViewAuditTrail = () => {
+    setActiveView('audit');
+  };
+
+  // Show loading while data is being fetched
+  if (isLoadingData) {
+    return (
+      <div className="min-h-screen bg-[#f9fafb] flex items-center justify-center">
+        <div className="text-center">
+          <div className="w-16 h-16 border-4 border-[#004d4a] border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
+          <p className="text-gray-600">Loading...</p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="flex h-screen overflow-hidden text-gray-800 font-sans">
@@ -36,33 +176,97 @@ const App: React.FC = () => {
       />
       
       <main className="flex-1 flex flex-col bg-[#f9fafb] relative">
-        {/* Top bar like image */}
-        <div className="h-14 bg-white border-b border-gray-200 px-6 flex items-center justify-between sticky top-0 z-10">
-          <div className="flex items-center gap-3">
-             <button 
-               onClick={() => setActiveView('list')}
-               className="flex items-center gap-2 px-3 py-1.5 rounded-full border border-gray-200 text-xs font-bold text-gray-600 hover:bg-gray-50"
-             >
-               <Clock size={14} />
-               Agent History
-             </button>
+        {/* API Status Indicator */}
+        {!apiConnected && (
+          <div className="bg-amber-50 border-b border-amber-200 px-4 py-2 text-sm text-amber-800 flex items-center gap-2">
+            <span className="w-2 h-2 bg-amber-500 rounded-full"></span>
+            API disconnected - running in offline mode
           </div>
-          <div className="flex items-center gap-4">
-             <button className="flex items-center gap-2 px-3 py-1.5 rounded-lg border border-gray-200 text-xs font-bold text-gray-600 hover:bg-gray-50">
-               <Settings size={14} />
-               Configuration
-             </button>
-             <div className="flex gap-2">
-                <button className="p-1.5 text-gray-400 hover:text-gray-600"><Share2 size={18} /></button>
-                <button className="p-1.5 text-gray-400 hover:text-gray-600"><MoreHorizontal size={18} /></button>
-             </div>
-          </div>
-        </div>
+        )}
 
         {/* Content Area */}
         <div className="flex-1 overflow-y-auto">
+          {activeView === 'landing' && (
+            <LandingPage onGetStarted={handleCreatePolicy} />
+          )}
+
           {activeView === 'create' && (
             <CreatePolicy onCreated={handleCreated} />
+          )}
+
+          {activeView === 'policy' && (
+            <RenewalPolicyPage
+              onBack={() => setActiveView('landing')}
+              onSavePolicy={handleSavePolicy}
+            />
+          )}
+
+          {activeView === 'encryption' && activeIntent && (
+            <EncryptionConfirmationPage
+              intent={activeIntent}
+              onBack={() => setActiveView('policy')}
+              onConfirm={handleConfirmEncryption}
+            />
+          )}
+
+          {activeView === 'dashboard' && (
+            <AgentStatusDashboard
+              intents={intents}
+              receipts={receipts}
+              onViewIntent={handleViewIntent}
+              onToggleAgent={async (intentId) => {
+                // Call backend API to toggle agent status
+                try {
+                  const result = await executionApi.triggerConditionCheck(intentId);
+                  if (result.success && result.data) {
+                    setIntents(intents.map(i => 
+                      i.id === intentId 
+                        ? { ...i, status: result.data!.intent.status }
+                        : i
+                    ));
+                  }
+                } catch (error) {
+                  console.error('Failed to toggle agent:', error);
+                  // Fallback to local toggle
+                  setIntents(intents.map(i => 
+                    i.id === intentId 
+                      ? { ...i, status: i.status === AgentStatus.PENDING ? AgentStatus.BLOCKED : AgentStatus.PENDING }
+                      : i
+                  ));
+                }
+              }}
+              onRefresh={loadDataFromBackend}
+            />
+          )}
+
+          {activeView === 'condition' && activeIntent && (
+            <ConditionCheckPage
+              intent={activeIntent}
+              onBack={() => setActiveView('dashboard')}
+              onExecute={handleExecute}
+              onConditionResult={handleConditionResult}
+            />
+          )}
+
+          {activeView === 'result' && currentReceipt && activeIntent && (
+            <ExecutionResultPage
+              receipt={currentReceipt}
+              intent={activeIntent}
+              onBack={() => setActiveView('dashboard')}
+              onRetry={() => {
+                // Retry logic would go here
+                console.log('Retrying execution...');
+              }}
+              onViewReceipt={handleViewReceipt}
+            />
+          )}
+
+          {activeView === 'audit' && (
+            <ReceiptAuditTrailPage
+              receipts={receipts}
+              intents={intents}
+              onViewReceipt={handleViewReceipt}
+            />
           )}
 
           {activeView === 'status' && activeIntent && (
@@ -72,79 +276,69 @@ const App: React.FC = () => {
               onReceipt={handleReceipt}
             />
           )}
+        </div>
 
-          {activeView === 'list' && (
-            <div className="max-w-5xl mx-auto py-12 px-6">
-              <h2 className="text-2xl font-black text-gray-900 mb-8">Agent History & Receipts</h2>
+        {/* Receipts Section - Only show on certain views */}
+        {(activeView === 'create' || activeView === 'status') && (
+          <div className="p-6 border-t border-gray-200 bg-white">
+            <div className="max-w-5xl mx-auto">
+              <h2 className="text-lg font-bold text-gray-900 mb-4">Agent History & Receipts</h2>
               {receipts.length === 0 ? (
-                <div className="bg-white rounded-2xl border-2 border-dashed border-gray-200 p-12 text-center">
-                  <div className="w-16 h-16 bg-gray-50 rounded-full flex items-center justify-center mx-auto mb-4 text-gray-300">
-                    <Clock size={32} />
-                  </div>
-                  <h3 className="text-lg font-bold text-gray-900 mb-1">No execution history</h3>
-                  <p className="text-sm text-gray-500">Run an agent simulation to see your audit trail here.</p>
+                <div className="bg-gray-50 rounded-lg p-6 text-center text-gray-500">
+                  <p>No execution history yet. Create an agent and run a simulation to see receipts here.</p>
                 </div>
               ) : (
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div className="space-y-3">
                   {receipts.map((receipt, idx) => (
-                    <div key={idx} className="bg-white rounded-2xl border border-gray-200 p-6 shadow-sm hover:shadow-md transition-shadow">
-                       <div className="flex justify-between items-start mb-6">
-                          <div className={`p-2 rounded-lg ${receipt.executed ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'}`}>
-                            <Layout size={24} />
+                    <div key={idx} className="bg-white border border-gray-200 rounded-lg p-4">
+                      <div className="flex items-center justify-between mb-2">
+                        <div className="flex items-center gap-3">
+                          <div className={`p-2 rounded ${receipt.executed ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'}`}>
+                            {receipt.executed ? '✓' : '✗'}
                           </div>
-                          <span className={`px-2 py-1 rounded text-[10px] font-black uppercase ${receipt.executed ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'}`}>
+                          <div>
+                            <p className="font-medium text-gray-900">{receipt.subscription}</p>
+                            <p className="text-sm text-gray-500">{receipt.condition}</p>
+                          </div>
+                        </div>
+                        <div className="text-right">
+                          <span className={`px-2 py-1 rounded text-xs font-bold ${
+                            receipt.executed ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'
+                          }`}>
                             {receipt.executed ? 'Success' : 'Blocked'}
                           </span>
-                       </div>
-                       <h4 className="text-lg font-bold text-gray-900 mb-1">{receipt.subscription}</h4>
-                       <p className="text-xs text-gray-500 mb-4">{new Date(receipt.timestamp).toLocaleString()}</p>
-                       
-                       <div className="bg-gray-50 rounded-xl p-4 font-mono text-[10px] space-y-2 mb-4 overflow-hidden">
-                          <p><span className="text-[#004d4a]">agent:</span> "{receipt.agent}"</p>
-                          <p><span className="text-[#004d4a]">condition:</span> "{receipt.condition}"</p>
-                          <p><span className="text-[#004d4a]">result:</span> "{receipt.conditionResult}"</p>
-                          {receipt.executed && (
-                            <>
-                              <p><span className="text-[#004d4a]">amount:</span> {receipt.amount}</p>
-                              <p><span className="text-[#004d4a]">txHash:</span> "{receipt.txHash}"</p>
-                            </>
-                          )}
-                          {!receipt.executed && <p><span className="text-red-500">reason:</span> "{receipt.reason}"</p>}
-                       </div>
-                       
-                       <button className="w-full py-2 rounded-lg border border-gray-200 text-xs font-bold text-gray-600 hover:bg-gray-50">
-                         View Details
-                       </button>
+                          <p className="text-xs text-gray-400 mt-1">
+                            {new Date(receipt.timestamp).toLocaleString()}
+                          </p>
+                        </div>
+                      </div>
+                      {receipt.guardrailCheck && (
+                        <div className="text-xs text-gray-600">
+                          <p>Guardrails: 
+                            {receipt.guardrailCheck.priceValid ? '✓ Price' : '✗ Price'} • 
+                            {receipt.guardrailCheck.vendorAllowed ? '✓ Vendor' : '✗ Vendor'} • 
+                            {receipt.guardrailCheck.withinLimit ? '✓ Limit' : '✗ Limit'}
+                          </p>
+                        </div>
+                      )}
                     </div>
                   ))}
                 </div>
               )}
             </div>
-          )}
-        </div>
-
-        {/* Floating Chat Input Style (Visual Polish) */}
-        <div className="p-6 border-t border-gray-200 bg-white">
-           <div className="max-w-4xl mx-auto">
-              <div className="relative group">
-                 <input 
-                   disabled
-                   type="text" 
-                   placeholder="Akomi is monitoring your subscriptions in the background..."
-                   className="w-full bg-gray-50 border border-gray-200 rounded-2xl py-5 px-6 text-sm text-gray-400 cursor-not-allowed group-hover:border-gray-300 transition-colors"
-                 />
-                 <div className="absolute right-3 top-3 flex items-center gap-2">
-                    <button className="p-2.5 text-gray-400 hover:bg-gray-200 rounded-full transition-colors"><Info size={20} /></button>
-                    <div className="bg-[#004d4a] p-2.5 rounded-xl text-white opacity-50"><MoreHorizontal size={20} /></div>
-                 </div>
-              </div>
-              <div className="mt-2 text-center">
-                <p className="text-[10px] text-gray-400">All interactions are private. AI-generated receipts are for audit purposes only. <a href="#" className="underline">Learn More</a></p>
-              </div>
-           </div>
-        </div>
+          </div>
+        )}
       </main>
     </div>
+  );
+};
+
+// Main App component with AuthProvider
+const App: React.FC = () => {
+  return (
+    <AuthProvider>
+      <AppContent />
+    </AuthProvider>
   );
 };
 

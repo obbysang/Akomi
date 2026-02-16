@@ -1,4 +1,11 @@
-export enum AgentStatus {
+/**
+ * Shared Types for Akomi Backend
+ * 
+ * This file is copied from the root types.ts to ensure
+ * the backend has access to the same type definitions.
+ */
+
+export enum AgentStatus {
   PENDING = 'pending',
   EXECUTED = 'executed',
   BLOCKED = 'blocked'
@@ -52,22 +59,4 @@ export interface ExecutionReceipt {
     vendorAllowed: boolean;
     withinLimit: boolean;
   };
-}
-
-// Policy data from backend API
-export interface PolicyData {
-  id: number;
-  user_id: number;
-  subscription_name: string;
-  vendor: string;
-  max_price: number;
-  period: 'monthly' | 'yearly';
-  sla_threshold: number;
-  sla_window_days: number;
-  vendor_allowlist: string[];
-  max_executions: number;
-  timeout_hours: number;
-  status: string;
-  created_at: string;
-  updated_at: string;
 }

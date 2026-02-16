@@ -1,0 +1,88 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Favicon Generator - Akomi</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 20px; }
+        .canvas-container { margin: 20px 0; }
+        canvas { border: 1px solid #ccc; margin: 10px; }
+        button { padding: 10px 20px; margin: 5px; background: #004d4a; color: white; border: none; cursor: pointer; }
+        button:hover { background: #003d3a; }
+    </style>
+</head>
+<body>
+    <h1>Akomi Favicon Generator</h1>
+    <p>Click the buttons below to generate PNG favicons in different sizes:</p>
+    
+    <div class="canvas-container">
+        <canvas id="canvas16" width="16" height="16"></canvas>
+        <canvas id="canvas32" width="32" height="32"></canvas>
+        <canvas id="canvas48" width="48" height="48"></canvas>
+        <canvas id="canvas64" width="64" height="64"></canvas>
+        <canvas id="canvas180" width="180" height="180"></canvas>
+        <canvas id="canvas192" width="192" height="192"></canvas>
+        <canvas id="canvas512" width="512" height="512"></canvas>
+    </div>
+    
+    <button onclick="generateFavicon(16, 'canvas16')">Generate 16×16</button>
+    <button onclick="generateFavicon(32, 'canvas32')">Generate 32×32</button>
+    <button onclick="generateFavicon(48, 'canvas48')">Generate 48×48</button>
+    <button onclick="generateFavicon(64, 'canvas64')">Generate 64×64</button>
+    <button onclick="generateFavicon(180, 'canvas180')">Generate 180×180</button>
+    <button onclick="generateFavicon(192, 'canvas192')">Generate 192×192</button>
+    <button onclick="generateFavicon(512, 'canvas512')">Generate 512×512</button>
+    <button onclick="generateAll()">Generate All Sizes</button>
+    
+    <script>
+        function generateFavicon(size, canvasId) {
+            const canvas = document.getElementById(canvasId);
+            const ctx = canvas.getContext('2d');
+            
+            // Clear canvas
+            ctx.clearRect(0, 0, size, size);
+            
+            // Draw background circle
+            const center = size / 2;
+            const radius = (size / 2) - (size * 0.1); // 90% of half size
+            
+            ctx.beginPath();
+            ctx.arc(center, center, radius, 0, 2 * Math.PI);
+            ctx.fillStyle = '#004d4a';
+            ctx.fill();
+            
+            // Draw "AK" text
+            const fontSize = size * 0.35; // 35% of canvas size
+            ctx.font = `bold ${fontSize}px Arial`;
+            ctx.fillStyle = 'white';
+            ctx.textAlign = 'center';
+            ctx.textBaseline = 'middle';
+            ctx.fillText('AK', center, center);
+            
+            // Create download link
+            canvas.toBlob(function(blob) {
+                const url = URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = `favicon-${size}x${size}.png`;
+                a.click();
+                URL.revokeObjectURL(url);
+            });
+        }
+        
+        function generateAll() {
+            const sizes = [16, 32, 48, 64, 180, 192, 512];
+            sizes.forEach(size => {
+                setTimeout(() => generateFavicon(size, `canvas${size}`), 500);
+            });
+        }
+        
+        // Generate preview on load
+        window.onload = function() {
+            const sizes = [16, 32, 48, 64, 180, 192, 512];
+            sizes.forEach(size => {
+                generateFavicon(size, `canvas${size}`);
+            });
+        };
+    </script>
+</body>
+</html>

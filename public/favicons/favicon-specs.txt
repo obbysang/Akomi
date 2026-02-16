@@ -1,0 +1,24 @@
+# Favicon Generation Script for Akomi
+# This script would typically be run with Node.js and a library like sharp
+# For now, I'll provide the specifications and create placeholder files
+
+# Required favicon sizes and formats:
+# - 16x16 PNG (favicon-16x16.png)
+# - 32x32 PNG (favicon-32x32.png) 
+# - 48x48 PNG (favicon-48x48.png)
+# - 64x64 PNG (favicon-64x64.png)
+# - 180x180 PNG (apple-touch-icon.png)
+# - 192x192 PNG (android-chrome-192x192.png)
+# - 512x512 PNG (android-chrome-512x512.png)
+# - Multi-size ICO file (favicon.ico) containing 16, 32, and 48px versions
+
+# Color specifications:
+# - Background: #004d4a (Akomi brand teal)
+# - Foreground: #ffffff (white)
+# - Transparent background for optimal display
+
+# Design notes:
+# - Geometric AK monogram for clarity at small sizes
+# - Circular background for consistency with modern design
+# - High contrast for accessibility
+# - Optimized for both light and dark browser themes
