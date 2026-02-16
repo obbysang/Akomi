@@ -1,0 +1,5 @@
+{
+  "name": "Akomi - Private Renewal Agent",
+  "description": "An autonomous subscription renewal agent that privately renews services based on encrypted conditions using BITE v2 logic.",
+  "requestFramePermissions": []
+}
